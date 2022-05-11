@@ -6,7 +6,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 
@@ -29,7 +28,6 @@ public class CreateOrderTest {
         response.then()
                 .assertThat()
                 .statusCode(200)
-                .body(matchesJsonSchemaInClasspath("createOrderResponseJsonScheme.json"))
                 .body("success", equalTo(true))
                 .body("name", equalTo("Флюоресцентный бессмертный бургер"))
                 .body("order.ingredients[0]", equalTo(ingredientsData.then().extract().path("data[0]")))
@@ -57,7 +55,6 @@ public class CreateOrderTest {
         response.then()
                 .assertThat()
                 .statusCode(200)
-                .body(matchesJsonSchemaInClasspath("createOrderResponseWithoutAuthorizationJsonScheme.json"))
                 .body("success", equalTo(true))
                 .body("name", equalTo("Флюоресцентный бессмертный бургер"))
                 .body("order.number", notNullValue());
@@ -72,7 +69,6 @@ public class CreateOrderTest {
         response.then()
                 .assertThat()
                 .statusCode(400)
-                .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                 .body("success", equalTo(false))
                 .body("message", equalTo("Ingredient ids must be provided"));
     }

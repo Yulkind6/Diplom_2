@@ -1,11 +1,12 @@
 import io.qameta.allure.Step;
+import io.restassured.response.Response;
 
-import java.net.http.HttpRequest;
+import static io.restassured.RestAssured.given;
 
 public class UserSteps {
 
     @Step("Создание уникального пользователя")
-        public static <Response> Response createUser(UserCredentials userCredentials) {
+        public static Response createUser(UserCredentials userCredentials) {
             return given()
                     .header("Content-type", "application/json")
                     .body(userCredentials)
@@ -13,12 +14,8 @@ public class UserSteps {
                     .post(BaseUrl.BASE_URL + "/auth/register");
         }
 
-    private static HttpRequest.Builder given() {
-        return null;
-    }
-
     @Step("Авторизация пользователя")
-        public static <Response> Response login(UserCredentials userCredentials) {
+        public static Response login(UserCredentials userCredentials) {
             return given()
                     .header("Content-type", "application/json")
                     .body(userCredentials)
@@ -27,7 +24,7 @@ public class UserSteps {
         }
 
         @Step("Логин под существующим пользователем")
-        public static <Response> Response getUserData(String token) {
+        public static Response getUserData(String token) {
             return given()
                     .header("Authorization", token)
                     .when()
@@ -35,7 +32,7 @@ public class UserSteps {
         }
 
         @Step("Изменение данных пользователя с авторизацией")
-        public static <Response> Response updateUserData(UserCredentials userCredentialsUpdate, String token) {
+        public static Response updateUserData(UserCredentials userCredentialsUpdate, String token) {
             return given()
                     .header("Content-type", "application/json")
                     .header("Authorization", token)

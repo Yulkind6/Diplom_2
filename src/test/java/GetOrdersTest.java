@@ -1,6 +1,5 @@
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
-import org.hamcrest.core.IsNull;
 import org.junit.After;
 import org.junit.Test;
 
@@ -8,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 
@@ -30,7 +28,6 @@ public class GetOrdersTest {
         response.then()
                 .assertThat()
                 .statusCode(200)
-                .body(matchesJsonSchemaInClasspath("getOrdersJsonScheme.json"))
                 .body("success", equalTo(true))
                 .body("orders[0]._id", notNullValue())
                 .body("orders[0].ingredients", equalTo(ingredients))
@@ -50,11 +47,9 @@ public class GetOrdersTest {
                 .header("Content-type", "application/json")
                 .when()
                 .get(BaseUrl.BASE_URL + "/orders");
-
         response.then()
                 .assertThat()
                 .statusCode(401)
-                .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                 .body("success", equalTo(false))
                 .body("message", equalTo("You should be authorised"));
     }

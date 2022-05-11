@@ -3,9 +3,8 @@ import io.restassured.response.Response;
 import org.junit.After;
 import org.junit.Test;
 
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
 public class CreateUserTest {
 
@@ -15,8 +14,8 @@ public class CreateUserTest {
     String token;
 
     @Test
-    @DisplayName("Успешное создание уникального пользователя")
-    public <Response> void createUserSuccessTest() {
+    @DisplayName("Успешное создание пользователя")
+    public void createUserSuccessTest() {
         Response response = UserSteps.createUser(new UserCredentials(email, password, name));
         response.then()
                 .assertThat()
@@ -37,14 +36,13 @@ public class CreateUserTest {
     @Test
     @DisplayName("Ошибка при создании уже зарегистрированного пользователя")
     public void createRegisteredUserErrorTest() {
-        UserCredentials User = new UserCredentials(email, password, name);
-        token = UserSteps.createUser(User).then().extract().path("accessToken");
+        UserCredentials userCredentials = new UserCredentials(email, password, name);
+        token = UserSteps.createUser(userCredentials).then().extract().path("accessToken");
 
-        Response response = UserSteps.createUser(User);
+        Response response = UserSteps.createUser(userCredentials);
         response.then()
                 .assertThat()
                 .statusCode(403)
-                .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                 .body("success", equalTo(false))
                 .body("message", equalTo("User already exists"));
     }
@@ -52,15 +50,14 @@ public class CreateUserTest {
     @Test
     @DisplayName("Ошибка при создании пользователя без email")
     public void createUserWithoutEmailErrorTest() {
-        UserCredentials User = new UserCredentials();
-        User.setPassword(password);
-        User.setName(name);
+        UserCredentials userCredentials = new UserCredentials();
+        userCredentials.setPassword(password);
+        userCredentials.setName(name);
 
-        Response response = UserSteps.createUser(User);
+        Response response = UserSteps.createUser(userCredentials);
         response.then()
                 .assertThat()
                 .statusCode(403)
-                .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                 .body("success", equalTo(false))
                 .body("message", equalTo("Email, password and name are required fields"));
     }
@@ -68,15 +65,14 @@ public class CreateUserTest {
     @Test
     @DisplayName("Ошибка при создании пользователя без password")
     public void createUserWithoutPasswordErrorTest() {
-        UserCredentials User = new UserCredentials();
-        User.setEmail(email);
-        User.setName(name);
+        UserCredentials userCredentials = new UserCredentials();
+        userCredentials.setEmail(email);
+        userCredentials.setName(name);
 
-        Response response = UserSteps.createUser(User);
+        Response response = UserSteps.createUser(userCredentials);
         response.then()
                 .assertThat()
                 .statusCode(403)
-                .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                 .body("success", equalTo(false))
                 .body("message", equalTo("Email, password and name are required fields"));
     }
@@ -84,15 +80,14 @@ public class CreateUserTest {
     @Test
     @DisplayName("Ошибка при создании пользователя без name")
     public void createUserWithoutNameErrorTest() {
-        UserCredentials User = new UserCredentials();
-        User.setEmail(email);
-        User.setPassword(password);
+        UserCredentials userCredentials = new UserCredentials();
+        userCredentials.setEmail(email);
+        userCredentials.setPassword(password);
 
-        Response response = UserSteps.createUser(User);
+        Response response = UserSteps.createUser(userCredentials);
         response.then()
                 .assertThat()
                 .statusCode(403)
-                .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                 .body("success", equalTo(false))
                 .body("message", equalTo("Email, password and name are required fields"));
     }

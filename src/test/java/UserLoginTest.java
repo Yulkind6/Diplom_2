@@ -3,7 +3,6 @@ import io.restassured.response.Response;
 import org.junit.After;
 import org.junit.Test;
 
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.core.IsEqual.equalTo;
 
@@ -23,7 +22,6 @@ public class UserLoginTest {
         response.then()
         .assertThat()
         .statusCode(200)
-        .body(matchesJsonSchemaInClasspath("createUserResponseJsonScheme.json"))
         .body("success", equalTo(true))
         .body("user.email", equalTo(email))
         .body("user.name", equalTo(name))
@@ -44,7 +42,6 @@ public class UserLoginTest {
         response.then()
         .assertThat()
         .statusCode(401)
-        .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
         .body("success", equalTo(false))
         .body("message", equalTo("email or password are incorrect"));
         }
@@ -58,7 +55,6 @@ public class UserLoginTest {
         response.then()
         .assertThat()
         .statusCode(401)
-        .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
         .body("success", equalTo(false))
         .body("message", equalTo("email or password are incorrect"));
         }
@@ -74,7 +70,6 @@ public class UserLoginTest {
         response.then()
         .assertThat()
         .statusCode(401)
-        .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
         .body("success", equalTo(false))
         .body("message", equalTo("email or password are incorrect"));
         }
@@ -90,7 +85,6 @@ public class UserLoginTest {
         response.then()
         .assertThat()
         .statusCode(401)
-        .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
         .body("success", equalTo(false))
         .body("message", equalTo("email or password are incorrect"));
         }

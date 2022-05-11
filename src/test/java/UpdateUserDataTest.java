@@ -1,6 +1,5 @@
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
-import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
 import org.junit.After;
 import org.junit.Test;
@@ -26,7 +25,6 @@ public class UpdateUserDataTest {
         response.then()
                 .assertThat()
                 .statusCode(200)
-                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("userDataJsonScheme.json"))
                 .body("success", equalTo(true))
                 .body("user.email", equalTo(emailUpdate))
                 .body("user.name", equalTo(nameUpdate));
@@ -52,7 +50,6 @@ public class UpdateUserDataTest {
         response.then()
                 .assertThat()
                 .statusCode(401)
-                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                 .body("success", equalTo(false))
                 .body("message", equalTo("You should be authorised"));
     }

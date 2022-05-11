@@ -4,7 +4,6 @@ import org.junit.After;
 import org.junit.Test;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.core.IsEqual.equalTo;
 
 public class UpdateUserCredentialsTest {
@@ -26,7 +25,6 @@ public class UpdateUserCredentialsTest {
                 response.then()
                         .assertThat()
                         .statusCode(200)
-                        .body(matchesJsonSchemaInClasspath("userDataJsonScheme.json"))
                         .body("success", equalTo(true))
                         .body("user.email", equalTo(emailUpdate))
                         .body("user.name", equalTo(nameUpdate));
@@ -52,7 +50,6 @@ public class UpdateUserCredentialsTest {
                 response.then()
                         .assertThat()
                         .statusCode(401)
-                        .body(matchesJsonSchemaInClasspath("errorJsonScheme.json"))
                         .body("success", equalTo(false))
                         .body("message", equalTo("You should be authorised"));
         }
