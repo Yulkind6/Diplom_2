@@ -1,102 +1,57 @@
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 public class CreateUserTest {
 
-    String email = "abccba@yandex.ru";
-    String password = "abccbapassword";
-    String name = "ABC";
-    String token;
+    private UserClient userClient;
+    private DataToCreateNewUser user;
+    private String accessToken;
+
+    @Before
+    public void setUp() {
+        userClient = new UserClient();
+        user = DataToCreateNewUser.getRandom();
+    }
 
     @Test
     @DisplayName("Успешное создание пользователя")
     public void createUserSuccessTest() {
-        Response response = UserSteps.createUser(new UserCredentials(email, password, name));
-        response.then()
-                .assertThat()
-                .statusCode(200)
-                .body("success", equalTo(true))
-                .body("user.email", equalTo(email))
-                .body("user.name", equalTo(name))
-                .body("accessToken", notNullValue())
-                .body("refreshToken", notNullValue());
+        ValidatableResponse response = userClient.createUser(user);
+        int statusCodePositiveResponseCreate = response.extract().statusCode();
+        boolean isUserCreated = response.extract().path("success");
+        ValidatableResponse responseUserLogged = userClient.login(new UserSteps(user.email, user.password));
+        String refreshToken = responseUserLogged.extract().path("refreshToken");
+        accessToken = responseUserLogged.extract().path("accessToken");
 
-        token = response.then()
-                .extract()
-                .path("accessToken");
-        UserSteps.getUserData(token).then()
-                .statusCode(200);
+        assertThat(statusCodePositiveResponseCreate, equalTo(200));
+        assertTrue("User is not created", isUserCreated);
+        assertNotNull("Пустой accessToken", accessToken);
+        assertNotNull("Пустой refreshToken", refreshToken);
     }
 
     @Test
     @DisplayName("Ошибка при создании уже зарегистрированного пользователя")
     public void createRegisteredUserErrorTest() {
-        UserCredentials userCredentials = new UserCredentials(email, password, name);
-        token = UserSteps.createUser(userCredentials).then().extract().path("accessToken");
+        userClient.createUser(user);
+        ValidatableResponse response = userClient.createUser(user);
+        int statusCodeNegativeResponse = response.extract().statusCode();
+        boolean isSuccess = response.extract().path("success");
+        String message = response.extract().path("message");
 
-        Response response = UserSteps.createUser(userCredentials);
-        response.then()
-                .assertThat()
-                .statusCode(403)
-                .body("success", equalTo(false))
-                .body("message", equalTo("User already exists"));
+        assertThat(statusCodeNegativeResponse, equalTo(403));
+        assertFalse(isSuccess);
+        assertThat("User already exists", message, (equalTo("User already exists")));
     }
-
-    @Test
-    @DisplayName("Ошибка при создании пользователя без email")
-    public void createUserWithoutEmailErrorTest() {
-        UserCredentials userCredentials = new UserCredentials();
-        userCredentials.setPassword(password);
-        userCredentials.setName(name);
-
-        Response response = UserSteps.createUser(userCredentials);
-        response.then()
-                .assertThat()
-                .statusCode(403)
-                .body("success", equalTo(false))
-                .body("message", equalTo("Email, password and name are required fields"));
-    }
-
-    @Test
-    @DisplayName("Ошибка при создании пользователя без password")
-    public void createUserWithoutPasswordErrorTest() {
-        UserCredentials userCredentials = new UserCredentials();
-        userCredentials.setEmail(email);
-        userCredentials.setName(name);
-
-        Response response = UserSteps.createUser(userCredentials);
-        response.then()
-                .assertThat()
-                .statusCode(403)
-                .body("success", equalTo(false))
-                .body("message", equalTo("Email, password and name are required fields"));
-    }
-
-    @Test
-    @DisplayName("Ошибка при создании пользователя без name")
-    public void createUserWithoutNameErrorTest() {
-        UserCredentials userCredentials = new UserCredentials();
-        userCredentials.setEmail(email);
-        userCredentials.setPassword(password);
-
-        Response response = UserSteps.createUser(userCredentials);
-        response.then()
-                .assertThat()
-                .statusCode(403)
-                .body("success", equalTo(false))
-                .body("message", equalTo("Email, password and name are required fields"));
-    }
-
     @After
     public void tearDown() {
-        if (token != null) {
-            UserSteps.deleteUser(token);
-            token = null;
-        }
+        userClient.delete(accessToken);
     }
 }
+
+

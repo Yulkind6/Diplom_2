@@ -1,99 +1,59 @@
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 public class UserLoginTest {
 
-        String email = "abccba@yandex.ru";
-        String password = "abccbapassword";
-        String name = "ABC";
-        String token;
+        private UserClient userClient;
+        private DataToCreateNewUser user;
+        private String accessToken;
+
+        @Before
+        public void setUp() {
+                userClient = new UserClient();
+                user = DataToCreateNewUser.getRandom();
+        }
 
         @Test
         @DisplayName("Успешная авторизация существующего пользователя")
         public void loginSuccessTest() {
-        UserSteps.createUser(new UserCredentials(email, password, name));
+                userClient.createUser(user);
+                ValidatableResponse response = userClient.login(new UserSteps(user.email, user.password));
+                int statusCodeResponse = response.extract().statusCode();
+                boolean isUserLogged = response.extract().path("success");
+                accessToken = response.extract().path("accessToken");
+                String refreshToken = response.extract().path("refreshToken");
+                String actualEmail = response.extract().path("user.email");
+                String actualName = response.extract().path("user.name");
 
-        Response response = UserSteps.login(new UserCredentials(email, password));
-        response.then()
-        .assertThat()
-        .statusCode(200)
-        .body("success", equalTo(true))
-        .body("user.email", equalTo(email))
-        .body("user.name", equalTo(name))
-        .body("accessToken", notNullValue())
-        .body("refreshToken", notNullValue());
-
-        token = response.then()
-        .extract()
-        .path("accessToken");
+                assertThat(statusCodeResponse, equalTo(200));
+                assertTrue("Пользователь не авторизован", isUserLogged);
+                assertNotNull(accessToken);
+                assertNotNull(refreshToken);
+                assertThat("Пользователь авторизовался под другим email", actualEmail, equalTo(user.email));
+                assertThat("Пользователь авторизовался под другим name", actualName, equalTo(user.name));
         }
 
         @Test
-        @DisplayName("Ошибка авторизации при некорректном email")
-        public void loginIncorrectEmailErrorTest() {
-        token = UserSteps.createUser(new UserCredentials(email, password, name)).then().extract().path("accessToken");
+        @DisplayName("Ошибка авторизации")
+        public void loginIncorrectEmailAndPasswordErrorTest() {
+                ValidatableResponse response = userClient.login(UserSteps.getWithNotRealEmailAndPassword(user));
+                int statusCodeResponse = response.extract().statusCode();
+                boolean isUserUnLogged = response.extract().path("success");
+                String message = response.extract().path("message");
 
-        Response response = UserSteps.login(new UserCredentials("incorrect_email", password));
-        response.then()
-        .assertThat()
-        .statusCode(401)
-        .body("success", equalTo(false))
-        .body("message", equalTo("email or password are incorrect"));
-        }
-
-        @Test
-        @DisplayName("Ошибка авторизации при некорректном password")
-        public void loginIncorrectPasswordErrorTest() {
-        token = UserSteps.createUser(new UserCredentials(email, password, name)).then().extract().path("accessToken");
-
-        Response response = UserSteps.login(new UserCredentials(email, "incorrect_password"));
-        response.then()
-        .assertThat()
-        .statusCode(401)
-        .body("success", equalTo(false))
-        .body("message", equalTo("email or password are incorrect"));
-        }
-
-        @Test
-        @DisplayName("Ошибка авторизации без email")
-        public void loginWithoutEmailErrorTest() {
-        token = UserSteps.createUser(new UserCredentials(email, password, name)).then().extract().path("accessToken");
-        UserCredentials UserCredentialsLogin = new UserCredentials();
-        UserCredentialsLogin.setPassword(password);
-
-        Response response = UserSteps.login(UserCredentialsLogin);
-        response.then()
-        .assertThat()
-        .statusCode(401)
-        .body("success", equalTo(false))
-        .body("message", equalTo("email or password are incorrect"));
-        }
-
-        @Test
-        @DisplayName("Ошибка авторизации без password")
-        public void loginWithoutPasswordErrorTest() {
-        token = UserSteps.createUser(new UserCredentials(email, password, name)).then().extract().path("accessToken");
-        UserCredentials UserCredentialsLogin = new UserCredentials();
-        UserCredentialsLogin.setEmail(email);
-
-        Response response = UserSteps.login(UserCredentialsLogin);
-        response.then()
-        .assertThat()
-        .statusCode(401)
-        .body("success", equalTo(false))
-        .body("message", equalTo("email or password are incorrect"));
+                assertThat(statusCodeResponse, equalTo(401));
+                assertFalse(isUserUnLogged);
+                assertThat(message, equalTo("email or password are incorrect"));
         }
 
         @After
         public void tearDown() {
-        if (token != null) {
-        UserSteps.deleteUser(token);
-        token = null;
-        }
+                userClient.delete(accessToken);
         }
 }

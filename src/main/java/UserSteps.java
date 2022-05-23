@@ -1,53 +1,31 @@
-import io.qameta.allure.Step;
-import io.restassured.response.Response;
-
-import static io.restassured.RestAssured.given;
+import com.github.javafaker.Faker;
 
 public class UserSteps {
 
-    @Step("Создание уникального пользователя")
-        public static Response createUser(UserCredentials userCredentials) {
-            return given()
-                    .header("Content-type", "application/json")
-                    .body(userCredentials)
-                    .when()
-                    .post(BaseUrl.BASE_URL + "/auth/register");
-        }
+    public String email;
+    public String password;
 
-    @Step("Авторизация пользователя")
-        public static Response login(UserCredentials userCredentials) {
-            return given()
-                    .header("Content-type", "application/json")
-                    .body(userCredentials)
-                    .when()
-                    .post(BaseUrl.BASE_URL + "/auth/login");
-        }
+    public UserSteps() {
+    }
 
-        @Step("Логин под существующим пользователем")
-        public static Response getUserData(String token) {
-            return given()
-                    .header("Authorization", token)
-                    .when()
-                    .get(BaseUrl.BASE_URL + "/auth/user");
-        }
+    public UserSteps(String email, String password) {
+        this.email = email;
+        this.password = password;
+    }
 
-        @Step("Изменение данных пользователя с авторизацией")
-        public static Response updateUserData(UserCredentials userCredentialsUpdate, String token) {
-            return given()
-                    .header("Content-type", "application/json")
-                    .header("Authorization", token)
-                    .body(userCredentialsUpdate)
-                    .when()
-                    .patch(BaseUrl.BASE_URL + "/auth/user");
-        }
+    public UserSteps setEmail(String email) {
+        this.email = email;
+        return this;
+    }
 
-        @Step("Удаление пользователя")
-        public static void deleteUser(String token) {
-            given()
-                    .header("Authorization", token)
-                    .when()
-                    .delete(BaseUrl.BASE_URL + "/auth/user")
-                    .then()
-                    .statusCode(202);
-        }
+    public UserSteps setPassword(String password) {
+        this.password = password;
+        return this;
+    }
+
+    public static UserSteps getWithNotRealEmailAndPassword(DataToCreateNewUser user) {
+        Faker faker = new Faker();
+        return new UserSteps().setEmail(faker.internet().emailAddress())
+                .setPassword(faker.internet().password(6,10));
+    }
 }

@@ -1,41 +1,39 @@
 import io.qameta.allure.Step;
-import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 
 import static io.restassured.RestAssured.given;
 
-public class OrderSteps {
+public class OrderSteps extends BaseUrl {
 
-    @Step("Получение данных об ингредиентах")
-    public static Response getIngredients() {
+    private static final String ORDER_PATH = "/api/orders";
+
+    @Step
+    public ValidatableResponse createOrder(OrderRequestCredentials ingredientsToCreateNewBurger, String accessToken) {
         return given()
+                .header("Authorization", accessToken)
+                .spec(getBaseSpec())
+                .body(ingredientsToCreateNewBurger)
                 .when()
-                .get(BaseUrl.BASE_URL + "/ingredients");
+                .post(ORDER_PATH)
+                .then();
     }
 
-    @Step("Получение заказов пользователя")
-    public static Response getUserOrders(String token) {
+    @Step
+    public ValidatableResponse userOrderInfo(String accessToken) {
         return given()
-                .header("Authorization", token)
+                .header("Authorization", accessToken)
+                .spec(getBaseSpec())
                 .when()
-                .get(BaseUrl.BASE_URL + "/orders");
+                .get(ORDER_PATH)
+                .then();
     }
 
-    @Step("Создание заказа авторизованного пользовател")
-    public static Response createOrderByAuthUser(OrderRequestCredentials OrderRequestCredentials, String token) {
+    @Step
+    public ValidatableResponse userOrderInfoWithoutToken() {
         return given()
-                .header("Content-type", "application/json")
-                .header("Authorization", token)
-                .body(OrderRequestCredentials)
+                .spec(getBaseSpec())
                 .when()
-                .post(BaseUrl.BASE_URL + "/orders");
-    }
-
-    @Step("Создание заказа неавторизованного пользователя")
-    public static Response createOrderByUnauthUser(OrderRequestCredentials OrderRequestCredentials) {
-        return given()
-                .header("Content-type", "application/json")
-                .body(OrderRequestCredentials)
-                .when()
-                .post(BaseUrl.BASE_URL + "/orders");
+                .get(ORDER_PATH)
+                .then();
     }
 }

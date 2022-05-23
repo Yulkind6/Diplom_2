@@ -1,64 +1,121 @@
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.core.IsEqual.equalTo;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.*;
 
 public class UpdateUserDataTest {
 
-    String email = "abccba@yandex.ru";
-    String password = "abccbapassword";
-    String name = "ABC";
-    String emailUpdate = "abccbanew@yandex.ru";
-    String passwordUpdate = "abccbapasswordnew";
-    String nameUpdate = "ABCnew";
-    String token;
+        private UserClient userClient;
+        private DataToCreateNewUser user;
+        private String accessToken;
 
-    @Test
-    @DisplayName("Успешное обновление информации о пользователе")
-    public void updateUserDataSuccessTest() {
-        token = UserSteps.createUser(new UserCredentials(email, password, name)).then().extract().path("accessToken");
-
-        Response response = UserSteps.updateUserData(new UserCredentials(emailUpdate, passwordUpdate, nameUpdate), token);
-        response.then()
-                .assertThat()
-                .statusCode(200)
-                .body("success", equalTo(true))
-                .body("user.email", equalTo(emailUpdate))
-                .body("user.name", equalTo(nameUpdate));
-
-        UserSteps.getUserData(token).then()
-                .assertThat()
-                .body("user.email", equalTo(emailUpdate))
-                .body("user.name", equalTo(nameUpdate));
-
-        UserSteps.login(new UserCredentials(emailUpdate, passwordUpdate)).then()
-                .statusCode(200);
-    }
-
-    @Test
-    @DisplayName("Ошибка обновления информации неавторизованного пользователя")
-    public void updateUnauthorizedUserDataErrorTest() {
-        Response response = RestAssured.given()
-                .header("Content-type", "application/json")
-                .body(new UserCredentials(emailUpdate, passwordUpdate, nameUpdate))
-                .when()
-                .patch(BaseUrl.BASE_URL + "/auth/user");
-
-        response.then()
-                .assertThat()
-                .statusCode(401)
-                .body("success", equalTo(false))
-                .body("message", equalTo("You should be authorised"));
-    }
-
-    @After
-    public void tearDown() {
-        if (token != null) {
-            UserSteps.deleteUser(token);
-            token = null;
+        @Before
+        public void setUp() {
+                userClient = new UserClient();
+                user = DataToCreateNewUser.getRandom();
         }
-    }
+
+        @Test
+        @DisplayName("Успешное обновление информации о пользователе (email, name)")
+        public void updateUserEmailAndNameSuccessTest() {
+                ValidatableResponse responseCreatedUser = userClient.createUser(user);
+                accessToken = responseCreatedUser.extract().path("accessToken");
+                DataToCreateNewUser newUserData = DataToCreateNewUser.getRandom();
+                ValidatableResponse responseChangeData = userClient.changeData(newUserData, accessToken);
+                String actualEmail = responseChangeData.extract().path("user.email");
+                String actualName = responseChangeData.extract().path("user.name");
+                ValidatableResponse responseLoginWithNewData = userClient.login(new UserSteps(newUserData.email, newUserData.password));
+                int statusCodeResponseChangeData = responseChangeData.extract().statusCode();
+                int statusCodeResponseLoginWithNewData = responseLoginWithNewData.extract().statusCode();
+
+                assertThat(statusCodeResponseChangeData, equalTo(200));
+                assertThat("У пользователя не изменились данные email", actualEmail, equalTo(newUserData.email));
+                assertThat("У пользователя не изменились данные name", actualName, equalTo(newUserData.name));
+                assertThat(statusCodeResponseLoginWithNewData, equalTo(200));
+        }
+
+        @Test
+        @DisplayName("Успешное обновление информации о пользователе (email)")
+        public void updateUserEmailSuccessTest() {
+                ValidatableResponse responseCreatedUser = userClient.createUser(user);
+                accessToken = responseCreatedUser.extract().path("accessToken");
+                DataToCreateNewUser newUserData = DataToCreateNewUser.getEmail();
+                ValidatableResponse responseChangeData = userClient.changeData(newUserData, accessToken);
+                String actualEmail = responseChangeData.extract().path("user.email");
+                String actualName = responseChangeData.extract().path("user.name");
+                ValidatableResponse responseLoginWithNewData = userClient.login(new UserSteps(newUserData.email, user.password));
+                int statusCodeResponseChangeData = responseChangeData.extract().statusCode();
+                int statusCodeResponseLoginWithNewData = responseLoginWithNewData.extract().statusCode();
+
+                assertThat(statusCodeResponseChangeData, equalTo(200));
+                assertThat("У пользователя не изменились данные email", actualEmail, equalTo(newUserData.email));
+                assertThat("У пользователя не изменились данные name", actualName, equalTo(user.name));
+                assertThat(statusCodeResponseLoginWithNewData, equalTo(200));
+        }
+
+        @Test
+        @DisplayName("Успешное обновление информации о пользователе (password)")
+        public void updateUserPasswordSuccessTest() {
+                ValidatableResponse responseCreatedUser = userClient.createUser(user);
+                accessToken = responseCreatedUser.extract().path("accessToken");
+                DataToCreateNewUser newUserData =  DataToCreateNewUser.getPassword();
+                ValidatableResponse responseChangeData = userClient.changeData(newUserData, accessToken);
+                String actualEmail = responseChangeData.extract().path("user.email");
+                String actualName = responseChangeData.extract().path("user.name");
+                ValidatableResponse responseLoginWithNewData = userClient.login(new UserSteps(user.email, newUserData.password));
+                int statusCodeResponseChangeData = responseChangeData.extract().statusCode();
+                int statusCodeResponseLoginWithNewData = responseLoginWithNewData.extract().statusCode();
+
+                assertThat(statusCodeResponseChangeData, equalTo(200));
+                assertThat("У пользователя не изменились данные email", actualEmail, equalTo(user.email));
+                assertThat("У пользователя не изменились данные name", actualName, equalTo(user.name));
+                assertThat(statusCodeResponseLoginWithNewData, equalTo(200));
+        }
+
+        @Test
+        @DisplayName("Успешное обновление информации о пользователе (name)")
+        public void updateUserNameSuccessTest() {
+                ValidatableResponse responseCreatedUser = userClient.createUser(user);
+                accessToken = responseCreatedUser.extract().path("accessToken");
+                DataToCreateNewUser newUserData =  DataToCreateNewUser.getName();
+                ValidatableResponse responseChangeData = userClient.changeData(newUserData, accessToken);
+                String actualEmail = responseChangeData.extract().path("user.email");
+                String actualName = responseChangeData.extract().path("user.name");
+                ValidatableResponse responseLoginWithNewData = userClient.login(new UserSteps(user.email, user.password));
+                int statusCodeResponseChangeData = responseChangeData.extract().statusCode();
+                int statusCodeResponseLoginWithNewData = responseLoginWithNewData.extract().statusCode();
+
+                assertThat(statusCodeResponseChangeData, equalTo(200));
+                assertThat("У пользователя не изменились данные email", actualEmail, equalTo(user.email));
+                assertThat("У пользователя не изменились данные name", actualName, equalTo(newUserData.name));
+                assertThat(statusCodeResponseLoginWithNewData, equalTo(200));
+        }
+
+        @Test
+        @DisplayName("Ошибка обновления информации неавторизованного пользователя")
+        public void updateUnauthorizedUserDataErrorTest() {
+                userClient.createUser(user);
+                DataToCreateNewUser newUserData = DataToCreateNewUser.getRandom();
+                ValidatableResponse responseChangeDataWithoutToken = userClient.changeDataWithoutToken(newUserData);
+                boolean isEmail = responseChangeDataWithoutToken.extract().path("success");
+                String message = responseChangeDataWithoutToken.extract().path("message");
+                ValidatableResponse responseLoginWithNewData = userClient.login(new UserSteps(newUserData.email, newUserData.password));
+                int statusCodeResponseChangeData = responseChangeDataWithoutToken.extract().statusCode();
+                int statusCodeResponseLoginWithNewData = responseLoginWithNewData.extract().statusCode();
+
+                assertThat(statusCodeResponseChangeData, equalTo(401));
+                assertFalse(isEmail);
+                assertThat(message, equalTo("You should be authorised"));
+                assertThat(statusCodeResponseLoginWithNewData, equalTo(401));
+        }
+
+        @After
+        public void tearDown() {
+                userClient.delete(accessToken);
+        }
 }
